@@ -17,4 +17,5 @@ model User_Data {
   name  String
   email String  @unique
   password  String
+  refreshToken  String?
 }

@@ -4,6 +4,9 @@ import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
+import { ConfigService } from '@nestjs/config';
+import { SignOptions } from 'jsonwebtoken';
+import { TokenService } from './token.service';
 
 @Injectable()
 export class AuthService {
@@ -11,6 +14,8 @@ export class AuthService {
     constructor(
         private prisma: PrismaService,
         private jwtService: JwtService,
+        private configService: ConfigService,
+        private tokenService: TokenService
     ) {}
 
     async register(registerDto: RegisterDto) {
@@ -54,8 +59,21 @@ export class AuthService {
         }
 
         const payload = { sub: user.id, email: user.email };
-        return this.jwtService.sign(payload);
+        return this.tokenService.generateTokens(payload);
     }
+
+    async refreshToken(userId: number, email: string) {
+        const payload = { sub: userId, email: email };
+        return this.tokenService.generateTokens(payload);
+    }
+
+    async logout(userId: number) {
+        this.prisma.user_Data.update({
+            where: { id: userId },
+            data: { refreshToken: null },
+        });
+    }
+
 
 
 }
