@@ -7,7 +7,7 @@ import { ApiQuery, ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Role } from '../../../common/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../../enums/role.enum';
+import { Roles } from '../../../common/enums/role.enum';
 
 @ApiTags('users')
 @ApiBearerAuth('JWT')
