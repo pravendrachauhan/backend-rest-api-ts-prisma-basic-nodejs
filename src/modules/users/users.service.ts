@@ -95,7 +95,13 @@ export class UsersService {
           take: query.limit,
           orderBy: {
             name: query.sortBy === 'desc' ? 'desc' : 'asc',
-          }
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
         },  
         );
 

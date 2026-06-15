@@ -8,6 +8,7 @@ import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { Public } from '../../../common/decorators/public.decorator';
 
 @ApiBearerAuth('JWT') //it is used to specify that the endpoints in this controller require JWT authentication. It adds a security scheme to the Swagger documentation, 
 // indicating that clients need to provide a valid JWT token in the Authorization header when making requests to these endpoints.  
@@ -21,11 +22,13 @@ export class AuthController {
     ){}
 
     @Post('register')
+    @Public()
     async register(@Body() registerDto: RegisterDto){
         return await this.authService.register(registerDto);
     }
 
     @Post('login')
+    @Public()
     @HttpCode(200)
     async login(@Body() loginDto: LoginDto){
         return {
@@ -34,10 +37,10 @@ export class AuthController {
     }
 
     @Get('profile')
-    @UseGuards(JwtAuthGuard) // You would typically use an AuthGuard here to protect this route
+    //@UseGuards(JwtAuthGuard) // You would typically use an AuthGuard here to protect this route
         //async getProfile(@Request() req) {  //intead of using @Request() in production apps it is better to create a custom decorator like @CurrentUser() to extract the user information from the request object, which can help improve code readability and maintainability.
-    async getProfile(@CurrentUser() req) {
-        return req.user; // user is attached to the request by an authentication guard
+    async getProfile(@CurrentUser('userId') userID: number) { // Using @CurrentUser() custom decorator to extract userId from the request object
+        return userID; // user is attached to the request by an authentication guard
     }
 
     @Post('refresh')
@@ -47,23 +50,24 @@ export class AuthController {
         this.jwtService.verify(dto.refreshToken, {
             secret: this.configService.get<string>('REFRESH_TOKEN_SECRET'),
         });
-        const payload = this.jwtService.decode(dto.refreshToken) as { sub: number, email: string }; 
+        const payload = this.jwtService.decode(dto.refreshToken) as { sub: number, email: string, role: string }; 
         if (!payload) {
             throw new UnauthorizedException('Invalid refresh token');
         }
         return this.authService.refreshToken(
             payload.sub,
-            payload.email
+            payload.email,
+            payload.role,
         );
     }
 
     @Post('logout')
-    @UseGuards(JwtAuthGuard)
+    //@UseGuards(JwtAuthGuard)
     logout(
-        @CurrentUser() user: any,
+        @CurrentUser('userId') userID: number
     ) {
         return this.authService.logout(
-        user.userId,
+            userID,
         );
     }
 }

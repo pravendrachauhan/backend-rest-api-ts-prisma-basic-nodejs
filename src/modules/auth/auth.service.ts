@@ -58,12 +58,12 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
         }
 
-        const payload = { sub: user.id, email: user.email };
+        const payload = { sub: user.id, email: user.email, role: user.role };
         return this.tokenService.generateTokens(payload);
     }
 
-    async refreshToken(userId: number, email: string) {
-        const payload = { sub: userId, email: email };
+    async refreshToken(userId: number, email: string, role: string) {
+        const payload = { sub: userId, email: email, role: role };
         return this.tokenService.generateTokens(payload);
     }
 
