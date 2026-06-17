@@ -2,9 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { GetUserFilteringDto } from './dto/get-user-filering.dto';
+import type { Multer } from 'multer';
 
 @Injectable()
 export class UsersService {
+  
 
   constructor(private prisma: PrismaService) {}
   
@@ -122,6 +124,26 @@ export class UsersService {
   //     const end = start + limit;  
   //     return this.user.slice(start, end);
   // }
+
+  uploadAvatar(userId: number, file: Multer.File) {
+    return this.prisma.user_Data.update({
+      where: {
+        id: userId,
+      },
+
+      data: {
+        avatarUrl:
+          file.filename,
+      },
+      select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            avatarUrl: true,
+          },
+    });
+  }
 
 } 
 
