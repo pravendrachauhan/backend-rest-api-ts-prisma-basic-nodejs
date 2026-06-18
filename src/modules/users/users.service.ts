@@ -3,12 +3,14 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { GetUserFilteringDto } from './dto/get-user-filering.dto';
 import type { Multer } from 'multer';
+import { S3Service } from '../../../common/services/s3.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class UsersService {
   
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private s3Service: S3Service, private configService: ConfigService) {}
   
 //   user = [
 //   { "id": 1, "name": "Praveen" },
@@ -125,15 +127,20 @@ export class UsersService {
   //     return this.user.slice(start, end);
   // }
 
-  uploadAvatar(userId: number, file: Multer.File) {
-    return this.prisma.user_Data.update({
+  async uploadAvatar(userId: number, file: Multer.File) {
+    const key = await this.s3Service.uploadFile(file);
+
+    await this.prisma.user_Data.update({
       where: {
         id: userId,
       },
 
+      // data: {
+      //   avatarUrl:
+      //     file.filename,
+      // },
       data: {
-        avatarUrl:
-          file.filename,
+        avatarUrl: key,
       },
       select: {
             id: true,
@@ -143,6 +150,26 @@ export class UsersService {
             avatarUrl: true,
           },
     });
+    return {
+      message:
+        'Avatar uploaded',
+    };
+  }
+
+
+    //   Example:
+    // avatars/profile.jpg
+    // becomes:
+    // https://my-bucket.s3.ap-south-1.amazonaws.com/avatars/profile.jpg
+    getPublicUrl(
+    key: string,
+  ) {
+
+    return `https://${this.configService.get(
+      'AWS_S3_BUCKET',
+    )}.s3.${this.configService.get(
+      'AWS_REGION',
+    )}.amazonaws.com/${key}`;
   }
 
 } 

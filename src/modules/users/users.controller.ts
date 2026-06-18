@@ -11,6 +11,7 @@ import { Roles } from '../../../common/enums/role.enum';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Multer } from 'multer';
 import { diskStorage } from 'multer';
+import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 
 @ApiTags('users')
 @ApiBearerAuth('JWT')
@@ -59,59 +60,60 @@ export class UsersController {
     return this.usersService.deleteUser(id);
   }
 
-  @UseInterceptors(
-    FileInterceptor('file', {
-        storage:
-          diskStorage({
-            destination:
-              './uploads',
+  // @UseInterceptors(
+  //   FileInterceptor('file', {
+  //       storage:
+  //         diskStorage({
+  //           destination:
+  //             './uploads',
           
-            filename: (req, file, cb) => {
-              const uniqueSuffix =
-                Date.now() +
-                '-' +
-                Math.round(
-                  Math.random() * 1e9,
-                );
-              const ext =
-                file.originalname.split('.').pop();
-              cb(
-                null,
-                `${file.fieldname}-${uniqueSuffix}.${ext}`,
-              );
-            },
-            fileFilter:
-            (
-              req,
-              file,
-              callback,
-            ) => {
+  //           filename: (req, file, cb) => {
+  //             const uniqueSuffix =
+  //               Date.now() +
+  //               '-' +
+  //               Math.round(
+  //                 Math.random() * 1e9,
+  //               );
+  //             const ext =
+  //               file.originalname.split('.').pop();
+  //             cb(
+  //               null,
+  //               `${file.fieldname}-${uniqueSuffix}.${ext}`,
+  //             );
+  //           },
+  //           fileFilter:
+  //           (
+  //             req,
+  //             file,
+  //             callback,
+  //           ) => {
 
-              if (
-                !file.mimetype.startsWith(
-                  'image/',
-                )
-              ) {
-                return callback(
-                  new BadRequestException(
-                    'Only images allowed',
-                  ),
-                  false,
-                );
-              }
+  //             if (
+  //               !file.mimetype.startsWith(
+  //                 'image/',
+  //               )
+  //             ) {
+  //               return callback(
+  //                 new BadRequestException(
+  //                   'Only images allowed',
+  //                 ),
+  //                 false,
+  //               );
+  //             }
 
-              callback(
-                null,
-                true,
-              );
-            },
-            limits: {
-              fileSize:
-                5 * 1024 * 1024,
-            },
-          }),
-      })
-    )
+  //             callback(
+  //               null,
+  //               true,
+  //             );
+  //           },
+  //           limits: {
+  //             fileSize:
+  //               5 * 1024 * 1024,
+  //           },
+  //         }),
+  //     })
+  //   )
+  @Post('/avatar')
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -121,9 +123,12 @@ export class UsersController {
       },
     },
   })
-  @Post(':id/avatar')
-  async uploadAvatar(@Param('id') id: number, @UploadedFile() file: Multer.File) {
-    const updatedUser = await this.usersService.uploadAvatar(id, file);
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+  FileInterceptor('file'),
+  )
+  async uploadAvatar(@UploadedFile() file: Multer.File, @CurrentUser('userId') userId: number,) {
+    const updatedUser = await this.usersService.uploadAvatar(userId, file);
     return updatedUser;
   }
 
